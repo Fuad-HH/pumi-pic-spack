@@ -19,6 +19,8 @@ class PumiPic(CMakePackage, CudaPackage):
             branch='make_search_class'
     )
 
+    patch("remove_maxiterlimit.patch", when="@pumitally")
+
     variant("cabana", default=True, description="Build with cabana")
     variant("pic", default=False, description="Build with position independent code (-fPIC)")
     variant("shared", default=False, description="Build shared libraries")
@@ -43,8 +45,8 @@ class PumiPic(CMakePackage, CudaPackage):
         msg="PUMI-PiC builds shared or links into shared consumers; EnGPar must be built with +pic or +shared",
     )
     
-    depends_on("kokkos@4.7.00")
-    depends_on("omega-h@11.0.0-scorec +kokkos")
+    depends_on("kokkos@4.7.00:4.7.04")
+    depends_on("omega-h@11.2.0-scorec +kokkos")
     depends_on("cabana@0.6.1", when="+cabana")
     depends_on("cabana@0.6.1", when="@pumitally")
 

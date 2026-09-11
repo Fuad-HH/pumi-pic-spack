@@ -45,11 +45,23 @@ class OpenmcPumi(CMakePackage):
         when="+pumitally",
         msg="OpenMC always builds shared libraries; PUMI-Tally must be built with +pic or +shared",
     )
-    depends_on("dagmc +openmc", when='+dagmc')
+    depends_on("dagmc@develop +openmc", when='+dagmc')
+
+    def setup_build_environment(self, env):
+        # When the PUMI-Tally stack is built against kokkos+cuda, the
+        # kokkos-nvcc-wrapper package points MPICH_CXX/OMPI_CXX at nvcc_wrapper
+        # for every dependent, so mpicxx silently compiles with nvcc. OpenMC is
+        # host-only C++ (it only uses the plain PumiTally.h API) and its
+        # vendored xtensor does not compile with nvcc's EDG frontend. Pin the
+        # MPI wrappers back to the host compiler.
+        env.set("MPICH_CC", self.spec["c"].package.cc)
+        env.set("MPICH_CXX", self.spec["cxx"].package.cxx)
+        env.set("OMPI_CC", self.spec["c"].package.cc)
+        env.set("OMPI_CXX", self.spec["cxx"].package.cxx)
 
     def cmake_args(self):
         options = ["-DCMAKE_INSTALL_LIBDIR=lib"]  # forcing bc sometimes goes to lib64
-        options += [self.define_from_variant("OPENMC_USE_PUMIPIC", "pumitally")]
+        options += [self.define_from_variant("OPENMC_USE_PUMITALLY", "pumitally")]
 
         options += [
             "-DCMAKE_C_COMPILER=%s" % self.spec["mpi"].mpicc,

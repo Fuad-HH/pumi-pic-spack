@@ -6,12 +6,12 @@ from spack.package import *
 
 
 class PumiTally(CMakePackage, CudaPackage):
-    homepage      = "https://github.com/Fuad-HH/PumiUMTally"
-    git      = "https://github.com/Fuad-HH/PumiUMTally.git"
+    homepage      = "https://github.com/Fuad-HH/PumiTally"
+    git      = "https://github.com/Fuad-HH/PumiTally.git"
     maintainers = ["Fuad-HH"]
 
     version("main", branch="main")
-    version("openmc", branch="integrate_pp_search_class")
+    version("openmc", branch="main")
 
     variant("pic", default=False, description="Build with position independent code (-fPIC)")
     variant("shared", default=True, description="Build as shared library")
