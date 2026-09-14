@@ -19,8 +19,6 @@ class PumiPic(CMakePackage, CudaPackage):
             branch='make_search_class'
     )
 
-    patch("remove_maxiterlimit.patch", when="@pumitally")
-
     variant("cabana", default=True, description="Build with cabana")
     variant("pic", default=False, description="Build with position independent code (-fPIC)")
     variant("shared", default=False, description="Build shared libraries")
