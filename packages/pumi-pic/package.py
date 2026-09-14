@@ -45,14 +45,39 @@ class PumiPic(CMakePackage, CudaPackage):
     
     depends_on("kokkos@4.7.00:4.7.04")
     depends_on("omega-h@11.2.0-scorec +kokkos")
-    depends_on("cabana@0.6.1", when="+cabana")
-    depends_on("cabana@0.6.1", when="@pumitally")
+    depends_on("cabana@0.6.1:0.7.0", when="+cabana")
 
+    conflicts(
+        "~cabana",
+        when="@pumitally",
+        msg="PUMI-Tally requires cabana support."
+    )
+
+    # PUMI-PiC and Omega_h get their CUDA support from the Kokkos backend, so
+    # only Kokkos needs the CUDA settings propagated to it.  Cabana is the
+    # exception: its CMakeLists runs kokkos_check(OPTIONS CUDA_LAMBDA) whenever
+    # the Kokkos it finds has the CUDA backend enabled, and only cabana+cuda
+    # pulls in kokkos+cuda_lambda.  Key Cabana off the Kokkos we build against
+    # (not off pumi-pic's own +cuda) so that specs such as `^kokkos+cuda
+    # cuda_arch=120` give a consistent DAG instead of a non-CUDA Cabana linked
+    # against a CUDA Kokkos.
     for arch in CudaPackage.cuda_arch_values:
         cuda_dep = "+cuda cuda_arch={0}".format(arch)
         depends_on("kokkos {0}".format(cuda_dep), when=cuda_dep)
-        depends_on("omega-h {0}".format(cuda_dep), when=cuda_dep)
-        depends_on("cabana {0}".format(cuda_dep), when=cuda_dep)
+        depends_on("cabana {0}".format(cuda_dep), when="+cabana ^kokkos {0}".format(cuda_dep))
+
+    def setup_build_environment(self, env):
+        # Kokkos' launch compiler swaps the compiler for nvcc_wrapper on every
+        # translation unit that depends on Kokkos.  nvcc_wrapper defaults to a
+        # plain g++ host compiler, which loses the MPI wrapper's flags: because
+        # CMAKE_CXX_COMPILER is already mpicxx, FindMPI reports that no extra
+        # flags are needed and MPI::MPI_CXX carries no include directory, so
+        # <mpi.h> goes missing.  Point nvcc_wrapper at the same MPI wrapper we
+        # hand to CMake below.
+        # Note: this applies to kokkos~wrapper too -- Kokkos still installs
+        # kokkos_launch_compiler and enables it globally whenever it is +cuda.
+        if self.spec.satisfies("^kokkos+cuda"):
+            env.set("NVCC_WRAPPER_DEFAULT_COMPILER", self.spec["mpi"].mpicxx)
 
     def cmake_args(self):
         args = []
